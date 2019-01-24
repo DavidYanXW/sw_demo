@@ -8,35 +8,8 @@
  */
 
 include "vendor/autoload.php";
-$mysql_config = [
-    'host' => '127.0.0.1',   //数据库ip
-    'port' => 3306,          //数据库端口
-    'user' => 'root',        //数据库用户名
-    'password' => 'david', //数据库密码
-    'database' => 'studio',   //默认数据库名
-    'timeout' => 0.5,       //数据库连接超时时间
-    'charset' => 'utf8mb4', //默认字符集
-    'strict_type' => true,  //true，会自动表数字转为int类型
-    'pool_size' => '3',     //连接池大小
-    'pool_get_timeout' => 0.5, //当在此时间内未获得到一个连接，会立即返回。（表示所以的连接都已在使用中）
-];
-$redis_config = [
-    'host' => '127.0.0.1',   //数据库ip
-    'port' => 6379,          //数据库端口
-    'timeout' => 0.5,       //数据库连接超时时间
-    'pool_size' => '3',     //连接池大小
-    'pool_get_timeout' => 0.5, //当在此时间内未获得到一个连接，会立即返回。（表示所以的连接都已在使用中）
-];
-$mc_config = [
-    'host' => '127.0.0.1',   //数据库ip
-    'port' => 11211,          //数据库端口
-    'timeout' => 0.5,       //数据库连接超时时间
-    'pool_size' => '3',     //连接池大小
-    'pool_get_timeout' => 0.5, //当在此时间内未获得到一个连接，会立即返回。（表示所以的连接都已在使用中）
-];
 
-
-class SwooleHttpServer
+class SwooleHttpServerPool
 {
 
     private $_server;
@@ -131,18 +104,6 @@ class SwooleHttpServer
             $this->_redis_pool_instance->put($redis);
         }
 
-
-
-        // mc:
-//        $mc = new Memcached();
-//        $mc->addServer("127.0.0.1", 11211);
-//        $add = $mc->add("mc_key", "mc_value");
-//        $get = $mc->get("mc_key");
-//        $mc->quit();
-//        $response->write($add . "||" . $get . $html_char);
-
-
-
     }
 
     public function onClose()
@@ -153,10 +114,10 @@ class SwooleHttpServer
 
 }
 
+$conf = include "config/db.conf.php";
+
+$mysql_instance = \Pool\MysqlPool::getInstance($conf["mysql"]);
+$redis_instance = \Pool\RedisPool::getInstance($conf["redis"]);
 
 
-$mysql_instance = \Pool\MysqlPool::getInstance($mysql_config);
-$redis_instance = \Pool\RedisPool::getInstance($redis_config);
-
-
-$http_server = new SwooleHttpServer($mysql_instance, $redis_instance);
+$http_server = new SwooleHttpServerPool($mysql_instance, $redis_instance);

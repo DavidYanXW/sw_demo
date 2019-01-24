@@ -9,10 +9,15 @@
 class SwooleHttpServer
 {
 
+    private $_conf = [];
+    /**
+     * @var \Swoole\Http\Server
+     */
     private $_server;
 
-    public function __construct()
+    public function __construct($conf)
     {
+        $this->_conf = $conf;
         $this->_server = new Swoole\Http\Server("0.0.0.0", 9513);
         $this->_server->set(
             [
@@ -52,7 +57,8 @@ class SwooleHttpServer
         $response->write(json_encode($arr) . $html_char);
 
         // db
-        $db = new mysqli("127.0.0.1", 'root', 'david', 'studio');
+        $db = new mysqli($this->_conf['mysql']['host'], $this->_conf['mysql']['user'], $this->_conf['mysql']['password'],
+            $this->_conf['mysql']['database'], $this->_conf['mysql']['port']);
         if ($db->connect_errno) {
             $response->write("failed,errno:" . $db->connect_errno . "||" . $db->connect_error . $html_char);
         } else {
@@ -66,7 +72,7 @@ class SwooleHttpServer
 
         // mc
         $mc = new Memcached();
-        $mc->addServer("127.0.0.1", 11211);
+        $mc->addServer($this->_conf['mc']['host'], $this->_conf['mc']['port']);
         $add = $mc->add("mc_key", "mc_value");
         $get = $mc->get("mc_key");
         //@important 显式关闭
@@ -75,7 +81,7 @@ class SwooleHttpServer
 
         // redis
         $redis = new Redis();
-        $redis->connect("127.0.0.1", 6379);
+        $redis->connect($this->_conf['redis']['host'], $this->_conf['redis']['port']);
         $pong = $redis->ping();
         $response->write($pong.$html_char);
         $set = $redis->set("hello", "world", 5*60);
@@ -94,4 +100,5 @@ class SwooleHttpServer
 
 }
 
-$http_server = new SwooleHttpServer();
+$conf = include "config/db.conf.php";
+$http_server = new SwooleHttpServer($conf);

@@ -7,6 +7,7 @@
  */
 namespace Pool;
 
+use Db\MysqlHandle;
 use Swoole\Coroutine\Channel;
 
 /**
@@ -50,31 +51,16 @@ class MysqlCoPool {
             $this->config = $config;
             $this->pool = new Channel($config['pool_size']);
             for ($i = 0; $i < $config['pool_size']; $i++) {
-                $mysql = new \mysqli($config['host'], $config['user'], $config['password'], $config['database'], $config['port']);
-                if ($mysql == false) {
-                    //连接失败，抛弃常
-                    throw new RuntimeException("failed to connect mysql server.");
-                } else {
-                    //mysql连接存入channel
-                    $this->put($mysql);
+                $mysql_handle = new MysqlHandle();
+                $res_conn = $mysql_handle->connect($config);
+                if($res_conn === true) {
+                    //mysql_handle存入channel
+                    $this->put($mysql_handle);
                 }
             }
         }
     }
 
-    /**
-     * 句柄重新连接
-     * @return \mysqli
-     */
-    public function handleReConnect() {
-        $mysql = new \mysqli($this->config['host'], $this->config['user'], $this->config['password'], $this->config['database'], $this->config['port']);
-        if ($mysql == false) {
-            //连接失败，抛弃常
-            throw new RuntimeException("failed to connect mysql server.");
-        }
-
-        return $mysql;
-    }
 
     /**
      * @param $handle
@@ -86,8 +72,8 @@ class MysqlCoPool {
     }
 
     /**
-     * @desc 获取一个连接，超时返回异常
-     * @return \mysqli
+     * @desc 获取一个元素，超时返回异常
+     * @return MysqlHandle
      * @throws RuntimeException
      */
     public function get()

@@ -7,4 +7,5 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Pool\\' => array($baseDir . '/pool'),
+    'Db\\' => array($baseDir . '/db'),
 );

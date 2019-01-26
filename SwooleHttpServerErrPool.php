@@ -9,6 +9,11 @@
 
 include "vendor/autoload.php";
 
+/**
+ * 错误例子：（worker之间由于进程隔离，无法共享资源、变量）
+ * 多worker共用连接池
+ * Class SwooleHttpServerPool
+ */
 class SwooleHttpServerPool
 {
 

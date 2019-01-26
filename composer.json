@@ -1,7 +1,8 @@
 {
   "autoload": {
     "psr-4": {
-      "Pool\\": "pool/"
+      "Pool\\": "pool/",
+      "Db\\": "db/"
     }
   }
 }

@@ -9,7 +9,11 @@ include "vendor/autoload.php";
  * Time: 下午3:43
  */
 
-class SwooleHttpServerFamily
+/**
+ * worker进程内实现的mysql连接池
+ * Class SwooleHttpServerCoPool
+ */
+class SwooleHttpServerCoPool
 {
 
     private $_server;
@@ -74,17 +78,13 @@ class SwooleHttpServerFamily
         // mysql
         try {
             $pool = \Pool\MysqlCoPool::getInstance($this->_db_conf);
-            $mysql = $pool->get();
-            defer(function () use ($mysql,$response,$html_char) {
+            $mysql_handle = $pool->get();
+            defer(function () use ($mysql_handle,$response,$html_char) {
                 //利用defer特性，可以达到协程执行完成，归还$mysql到连接池
-                \Pool\MysqlCoPool::getInstance()->put($mysql);
-                $response->write("当前可用连接数：" . \Pool\MysqlCoPool::getInstance()->getLength().$html_char);
+                \Pool\MysqlCoPool::getInstance()->put($mysql_handle);
+                $response->write("当前可用mysql_handle：" . \Pool\MysqlCoPool::getInstance()->getLength().$html_char);
             });
-            $result = $mysql->query("select * from demo");
-            if(in_array($mysql->errno, [2006, 2013])) {
-                $mysql = $pool->handleReConnect();
-                $result = $mysql->query("select * from demo");
-            }
+            $result = $mysql_handle->query("select * from demo");
             $data = $result->fetch_all();
             $response->write(json_encode($data).$html_char);
         } catch (\Exception $e) {
@@ -101,4 +101,4 @@ class SwooleHttpServerFamily
 $conf = include "config/db.conf.php";
 
 
-$http_server = new SwooleHttpServerFamily($conf["mysql"]);
+$http_server = new SwooleHttpServerCoPool($conf["mysql"]);
